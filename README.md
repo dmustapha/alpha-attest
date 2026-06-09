@@ -2,7 +2,7 @@
 
 **AI trading signals with cryptographic accountability. Every call permanently locked on-chain before publication.**
 
-Live demo: _[coming soon]_
+Live demo: https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app
 Chain: Robinhood Chain Testnet (Chain ID 46630)
 Hackathon: [Arbitrum Open House London: Online Buildathon](https://arbitrum-london.hackquest.io/buildathons/Arbitrum-Open-House-London-Online-Buildathon)
 

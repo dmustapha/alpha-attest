@@ -4,14 +4,14 @@
 
 | Link | URL |
 |------|-----|
-| Live App | https://alphaattest.vercel.app — UPDATE after Vercel deploy |
-| Signal Feed | https://alphaattest.vercel.app |
-| Verify Signal #1 | https://alphaattest.vercel.app/verify/1 |
-| How It Works | https://alphaattest.vercel.app/proof |
+| Live App | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app |
+| Signal Feed | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app |
+| Verify Signal #1 | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app/verify/1 |
+| How It Works | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app/proof |
 
 ## Repository
 
-- GitHub: https://github.com/dmustapha/alphaattest — UPDATE after push
+- GitHub: https://github.com/dmustapha/alpha-attest
 
 ## Demo Video
 
