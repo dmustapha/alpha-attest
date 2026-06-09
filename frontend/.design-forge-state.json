@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "currentPhase": 0,
+  "status": "in-progress",
+  "autonomous_mode": false,
+  "completedPhases": [],
+  "phase_ledger": [],
+  "context_percentage": 0,
+  "timestamp": "2026-06-09T00:00:00Z",
+  "decisions": {
+    "startingPoint": "existing-nextjs",
+    "industry": "Trading Signals / RWA / On-Chain Proof",
+    "dials": { "DV": 6, "MI": 5, "VD": 8 },
+    "dialOverrides": {},
+    "winningVariation": null,
+    "fontPairing": ["DM Serif Display", "IBM Plex Mono", "IBM Plex Sans"],
+    "colorPalette": { "accent": "#00E5FF", "bg": "#050505", "surface": "#0b0b0b" }
+  },
+  "artifacts": {
+    "mockups": [],
+    "variations": [],
+    "screenshots": [],
+    "sharedContext": null
+  },
+  "pipeline_run": false
+}
