@@ -9,7 +9,7 @@ export const robinhoodTestnet = defineChain({
     default: {
       http: [
         process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL ??
-          "https://robinhood-testnet.g.alchemy.com/v2/MISSING_KEY",
+          "https://rpc.testnet.chain.robinhood.com",
       ],
     },
   },
