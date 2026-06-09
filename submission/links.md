@@ -4,10 +4,10 @@
 
 | Link | URL |
 |------|-----|
-| Live App | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app |
-| Signal Feed | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app |
-| Verify Signal #1 | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app/verify/1 |
-| How It Works | https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app/proof |
+| Live App | https://alpha-attest.vercel.app |
+| Signal Feed | https://alpha-attest.vercel.app |
+| Verify Signal #1 | https://alpha-attest.vercel.app/verify/1 |
+| How It Works | https://alpha-attest.vercel.app/proof |
 
 ## Repository
 

@@ -36,7 +36,7 @@
 | bytes32 | `0x5179d860ab5913760742902719a607af1c94b14c2e31aeec1627a3b71dc27393` |
 | Ticker | TSLA |
 | Direction | NEUTRAL |
-| Verify UI | [/verify/1](https://alpha-attest-piznb5xs0-damilolas-projects-fafdf859.vercel.app/verify/1) |
+| Verify UI | [/verify/1](https://alpha-attest.vercel.app/verify/1) |
 
 ## Integration Depth: Gold
 - 3 contracts deployed (SignalRegistry + SubscriptionManager + MockConsumer)
