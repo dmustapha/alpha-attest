@@ -58,6 +58,16 @@ export class FinnhubClient extends EventEmitter {
     });
   }
 
+  // One-shot REST quote — used by the resolver to fetch the closing price after signal lock-in
+  async getQuote(symbol: string): Promise<number> {
+    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${this.apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Finnhub quote failed for ${symbol}: ${res.status}`);
+    const data = (await res.json()) as { c: number }; // c = current price
+    if (!data.c) throw new Error(`Finnhub quote returned zero price for ${symbol}`);
+    return data.c;
+  }
+
   private subscribe(): void {
     for (const symbol of this.symbols) {
       this.ws?.send(JSON.stringify({ type: "subscribe", symbol }));

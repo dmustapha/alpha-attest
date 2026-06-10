@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
@@ -7,29 +6,6 @@ export interface IPFSResult {
   ipfsHash: `0x${string}`; // bytes32 for on-chain storage
   url: string;
   provider: "pinata" | "storacha";
-}
-
-// Compute CIDv0 from content — identical to what IPFS would produce
-// CIDv0 = base58( [0x12, 0x20] + sha256(content) )
-function computeCIDv0(content: Buffer): string {
-  const sha256 = createHash("sha256").update(content).digest();
-  // Multihash: [fn=sha2-256=0x12, len=0x20, ...32 bytes...]
-  const multihash = Buffer.concat([Buffer.from([0x12, 0x20]), sha256]);
-
-  // Base58 encode (Bitcoin alphabet)
-  const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  let num = BigInt("0x" + multihash.toString("hex"));
-  let encoded = "";
-  while (num > 0n) {
-    encoded = ALPHABET[Number(num % 58n)] + encoded;
-    num = num / 58n;
-  }
-  // Leading zero bytes → leading '1's
-  for (const byte of multihash) {
-    if (byte !== 0) break;
-    encoded = "1" + encoded;
-  }
-  return encoded;
 }
 
 // CIDv0 to bytes32: base58-decode → strip 2-byte multihash prefix → hex
@@ -57,21 +33,36 @@ export class PinataClient {
 
   async upload(content: object, filename: string): Promise<IPFSResult> {
     const json = JSON.stringify(content, null, 2);
-    const buf = Buffer.from(json, "utf8");
 
-    // Compute CIDv0 deterministically — same hash IPFS would assign
-    const cid = computeCIDv0(buf);
+    const response = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.jwt}`,
+      },
+      body: JSON.stringify({
+        pinataContent: content,
+        pinataMetadata: { name: filename },
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Pinata upload failed (${response.status}): ${err}`);
+    }
+
+    const data = (await response.json()) as { IpfsHash: string };
+    const cid = data.IpfsHash;
     const ipfsHash = cidToBytes32(cid);
 
-    // Cache locally so verify page can serve it
+    // Cache locally so precache.ts can copy to frontend/public/ipfs-cache/
     writeFileSync(join(this.cacheDir, `${cid}.json`), json, "utf8");
-
-    console.log(`[IPFS] Computed CIDv0 locally (Pinata plan limit hit — content cached)`);
+    console.log(`[IPFS] Pinned via Pinata: ${cid}`);
 
     return {
       cid,
       ipfsHash,
-      url: `https://ipfs.io/ipfs/${cid}`,
+      url: `https://gateway.pinata.cloud/ipfs/${cid}`,
       provider: "pinata",
     };
   }

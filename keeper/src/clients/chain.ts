@@ -79,6 +79,22 @@ export class ChainClient {
     return txHash;
   }
 
+  async resolveSignal(signalId: bigint, actualPrice: bigint): Promise<`0x${string}`> {
+    const txHash = await this.walletClient.writeContract({
+      address: this.registryAddress,
+      abi: REGISTRY_ABI,
+      functionName: "resolveSignal",
+      args: [signalId, actualPrice],
+    });
+    await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+    console.log(`[Chain] Signal #${signalId} resolved: ${txHash}`);
+    return txHash;
+  }
+
+  async getBlockNumber(): Promise<bigint> {
+    return this.publicClient.getBlockNumber();
+  }
+
   async getLastSequenceNumber(): Promise<bigint> {
     return (await this.publicClient.readContract({
       address: this.registryAddress,

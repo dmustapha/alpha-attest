@@ -9,6 +9,7 @@ import { useSignals, useAccuracyScore } from "../hooks/useSignals";
 import { useSubscription } from "../hooks/useSubscription";
 import SignalCard from "../components/SignalCard";
 import SampleSignals from "../components/SampleSignals";
+import SubscribeButton from "../components/SubscribeButton";
 
 function OnboardingBlock() {
   const [open, setOpen] = useState(false);
@@ -34,7 +35,17 @@ function OnboardingBlock() {
           </div>
           <div className="aa-onboarding-step">
             <span className="aa-onboarding-n">4.</span>
-            <span>Subscribe for <strong style={{ color: "var(--text)" }}>10 USDG/month</strong> — USDG is a stablecoin worth ≈ $1. You&apos;ll need a small amount to pay the subscription.</span>
+            <span>
+              Subscribe for <strong style={{ color: "var(--text)" }}>10 USDG/month</strong> — USDG is a testnet stablecoin.{" "}
+              <a
+                href={`https://explorer.testnet.chain.robinhood.com/address/0x7E955252E15c84f5768B83c41a71F9eba181802F`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "var(--brand)" }}
+              >
+                Get test USDG →
+              </a>
+            </span>
           </div>
         </div>
       )}
@@ -49,7 +60,7 @@ export default function Dashboard() {
   const isWrongNetwork = isConnected && chainId !== 46630;
   const { signals, loading, error } = useSignals();
   const accuracyScore = useAccuracyScore();
-  const { isSubscriber, checkSubscription, subscribe, pending, error: subscribeError } = useSubscription();
+  const { isSubscriber, checkSubscription } = useSubscription();
 
   useEffect(() => {
     if (isConnected) checkSubscription();
@@ -148,7 +159,7 @@ export default function Dashboard() {
         {/* Sample signals — judge preview, no wallet required */}
         <SampleSignals />
 
-        {/* Subscribe callout */}
+        {/* Subscribe callout — not connected */}
         {!isConnected && (
           <div className="aa-subscribe-callout">
             <div>
@@ -171,25 +182,21 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-        {isConnected && !isSubscriber && isSubscriber !== null && (
+
+        {/* Subscribe callout — connected (all states handled by SubscribeButton) */}
+        {isConnected && (
           <div className="aa-subscribe-callout">
             <div>
-              <div className="aa-subscribe-callout-title">Unlock Full Analysis</div>
+              <div className="aa-subscribe-callout-title">
+                {isSubscriber ? "Your Subscription" : "Unlock Full Analysis"}
+              </div>
               <div className="aa-subscribe-callout-sub">
-                Read the complete 400+ word analysis behind every signal — what moved, the macro context,
-                and the full reasoning. $10/month in USDG (≈ $1 each).
+                {isSubscriber
+                  ? "You have full access to all signal analyses."
+                  : "Read the complete 400+ word analysis behind every signal — what moved, the macro context, and the full reasoning. $10/month in USDG (≈ $1 each)."}
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <button onClick={subscribe} disabled={pending} className="aa-btn aa-btn-primary">
-                {pending ? "Processing…" : "Subscribe · 10 USDG / month"}
-              </button>
-              {subscribeError && (
-                <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: "var(--font-mono)" }}>
-                  {subscribeError}
-                </span>
-              )}
-            </div>
+            <SubscribeButton />
           </div>
         )}
 
@@ -203,7 +210,7 @@ export default function Dashboard() {
             Live Signals
           </div>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-4)" }}>
-            Updated every 30s
+            Live
           </span>
         </div>
 

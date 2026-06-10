@@ -46,6 +46,7 @@ coverage/
 # Temporary
 tmp/
 temp/
+.!*
 
 # Local
 .claude/

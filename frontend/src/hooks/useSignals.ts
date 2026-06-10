@@ -18,7 +18,6 @@ export interface OnChainSignal {
   resolvedPrice: bigint;
 }
 
-// <!-- [CRITIQUE E-4] useSignals upgraded: SSE from Alchemy Notify as primary, 30s polling as fallback -->
 export function useSignals(refreshInterval = 30000) {
   const publicClient = usePublicClient();
   const [signals, setSignals] = useState<OnChainSignal[]>([]);
@@ -56,28 +55,26 @@ export function useSignals(refreshInterval = 30000) {
 
   useEffect(() => {
     fetchAll();
+    if (!publicClient) return;
 
-    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    // Subscribe to SignalCommitted events directly via Alchemy WebSocket.
+    // Avoids the serverless isolation issue with SSE on Vercel — no in-memory
+    // subscriber set, no cross-instance message loss.
+    const unwatch = publicClient.watchContractEvent({
+      address: CONTRACT_ADDRESSES.SIGNAL_REGISTRY,
+      abi: SIGNAL_REGISTRY_ABI,
+      eventName: "SignalCommitted",
+      onLogs: () => { fetchAll(); },
+    });
 
-    const es = new EventSource("/api/notify");
+    return unwatch;
+  }, [publicClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    es.onmessage = () => {
-      fetchAll();
-    };
-
-    es.onerror = () => {
-      es.close();
-      // Only start polling once — guard against repeated onerror calls
-      if (!pollingInterval) {
-        pollingInterval = setInterval(fetchAll, refreshInterval);
-      }
-    };
-
-    // Cleanup: close SSE and clear any polling interval
-    return () => {
-      es.close();
-      if (pollingInterval) clearInterval(pollingInterval);
-    };
+  // Polling fallback: only active when publicClient unavailable (pre-connect)
+  useEffect(() => {
+    if (publicClient) return;
+    const interval = setInterval(fetchAll, refreshInterval);
+    return () => clearInterval(interval);
   }, [publicClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { signals, loading, error };

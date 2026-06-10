@@ -8,9 +8,18 @@ import { EIP712Signer, type SignalPayload } from "./signer/eip712.js";
 // >1% price change triggers analysis and signal commitment
 const CHANGE_THRESHOLD = 0.01;
 
+// Blocks to wait before resolving a signal (~50 blocks ≈ 10 minutes on Robinhood Chain)
+const RESOLVE_DELAY_BLOCKS = 50n;
+
 interface PriceState {
   price: number;
   timestamp: number;
+}
+
+interface PendingResolve {
+  signalId: bigint;
+  ticker: string;
+  commitBlock: bigint;
 }
 
 export class SignalOrchestrator {
@@ -25,6 +34,8 @@ export class SignalOrchestrator {
   private readonly lastPrices = new Map<string, PriceState>();
   // Prevent concurrent processing for the same symbol
   private readonly processing = new Set<string>();
+  // Signals committed but not yet resolved
+  private readonly pendingResolves: PendingResolve[] = [];
 
   constructor(config: {
     finnhubKey: string;
@@ -51,6 +62,10 @@ export class SignalOrchestrator {
 
     this.finnhub.connect();
     console.log("[AlphaAttest] Monitoring TSLA and AMZN for >1% price movements");
+
+    // Check every 2 minutes if any pending signals have passed the resolve delay
+    setInterval(() => this.resolveReady().catch(console.error), 120_000);
+    console.log("[AlphaAttest] Auto-resolver active (every 2 min, after 50 blocks)");
   }
 
   private async handleTrade(trade: TradeData): Promise<void> {
@@ -161,6 +176,11 @@ export class SignalOrchestrator {
       console.log(`[${symbol}] On-chain: ${txHash}`);
       console.log(`[${symbol}] CID: ${ipfsResult.cid} | Hash: ${ipfsResult.ipfsHash}`);
 
+      // Step 8: Queue for auto-resolution after RESOLVE_DELAY_BLOCKS
+      const commitBlock = await this.chain.getBlockNumber();
+      this.pendingResolves.push({ signalId: sequenceNumber, ticker: symbol, commitBlock });
+      console.log(`[${symbol}] Queued for resolution after block ${commitBlock + RESOLVE_DELAY_BLOCKS}`);
+
       // Update baseline
       this.lastPrices.set(symbol, { price: trade.price, timestamp: trade.timestamp });
 
@@ -168,6 +188,33 @@ export class SignalOrchestrator {
       console.error(`[${symbol}] Signal processing error:`, err);
     } finally {
       this.processing.delete(symbol);
+    }
+  }
+
+  private async resolveReady(): Promise<void> {
+    if (this.pendingResolves.length === 0) return;
+
+    let currentBlock: bigint;
+    try {
+      currentBlock = await this.chain.getBlockNumber();
+    } catch {
+      return; // RPC hiccup — try again next interval
+    }
+
+    for (let i = this.pendingResolves.length - 1; i >= 0; i--) {
+      const pending = this.pendingResolves[i];
+      if (currentBlock - pending.commitBlock < RESOLVE_DELAY_BLOCKS) continue;
+
+      try {
+        const actualPrice = await this.finnhub.getQuote(pending.ticker);
+        const priceFixed = BigInt(Math.round(actualPrice * 1e8));
+        await this.chain.resolveSignal(pending.signalId, priceFixed);
+        console.log(`[Resolver] Signal #${pending.signalId} (${pending.ticker}) resolved at $${actualPrice}`);
+        this.pendingResolves.splice(i, 1);
+      } catch (err) {
+        console.error(`[Resolver] Failed to resolve signal #${pending.signalId}:`, err);
+        // Leave in queue — will retry next interval
+      }
     }
   }
 }
