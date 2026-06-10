@@ -44,3 +44,9 @@
 - MockConsumer reads on-chain Robinhood equity token (TSLA: `0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E`) on every signal
 - EIP-712 typed signing — keeper signs off-chain, contract verifies on-chain
 - USDG (`0x7E955252E15c84f5768B83c41a71F9eba181802F`) gated subscriptions
+
+## Pre-cache Signals (2026-06-10T06:07:07.083Z)
+
+- Signal #5: TSLA NEUTRAL | TX: `0xaacd066289034653d657e45213e515a7f7e01a289bc56840b0bdd788c4c9601a` | CID: `bafkreidhxiwheq2s5ouzmtzh5ktqlaqgabtxzy7sy6y7rxjhjlna5ny7ny`
+- Signal #6: AMZN NEUTRAL | TX: `0xe209849ac003e67d3d26b6d772142bf4d5bdcaa95bb5b90dbb7b9f2dcdc191e0` | CID: `bafkreihpdc2jvwl6tkupdlcvlmqowreezg3nfcfdcf52r75hoewkln6frq`
+- Signal #7: TSLA BULLISH | TX: `0x51dd98d7174976e1e86fa11f08cf2dfe22107d3599b6fcb8d39bd415a81f2920` | CID: `bafkreibld4ow63qa4bvyadblcvy35sgvysf7trlyz2fben7ngndio44yi4`
