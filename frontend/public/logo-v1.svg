@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 46" fill="none">
+  <!-- Shield body -->
+  <path d="M20 2 L37 9 L37 28 Q37 39 20 44 Q3 39 3 28 L3 9 Z"
+    fill="#00E5FF" fill-opacity="0.08"
+    stroke="#00E5FF" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- EKG pulse line — signal locked inside the seal -->
+  <polyline
+    points="7,27 11,27 14,18 17,36 20,27 23,27 26,22 29,27 33,27"
+    fill="none" stroke="#00E5FF" stroke-width="2.2"
+    stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

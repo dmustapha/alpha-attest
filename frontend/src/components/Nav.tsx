@@ -14,19 +14,17 @@ export default function Nav() {
   return (
     <nav className="aa-nav">
       <Link href="/" className="aa-nav-logo" style={{ textDecoration: "none" }}>
-        <svg className="aa-nav-logo-glyph" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <svg className="aa-nav-logo-glyph" viewBox="0 0 40 46" fill="none" aria-hidden="true">
           <path
-            d="M10 2L18 10L10 18L2 10L10 2Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            fill="none"
+            d="M20 2 L37 9 L37 28 Q37 39 20 44 Q3 39 3 28 L3 9 Z"
+            fill="currentColor" fillOpacity="0.10"
+            stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"
           />
-          <path
-            d="M10 5L15 10L10 15L5 10L10 5Z"
-            fill="currentColor"
-            opacity="0.3"
+          <polyline
+            points="7,27 11,27 14,18 17,36 20,27 23,27 26,22 29,27 33,27"
+            fill="none" stroke="currentColor" strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round"
           />
-          <circle cx="10" cy="10" r="1.5" fill="currentColor" />
         </svg>
         AlphaAttest
       </Link>

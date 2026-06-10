@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 44" fill="none">
+  <!-- Hexagon -->
+  <polygon
+    points="20,2 37,11 37,33 20,42 3,33 3,11"
+    fill="#00E5FF" fill-opacity="0.08"
+    stroke="#00E5FF" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Rising alpha signal — diagonal arrow (bullish move) -->
+  <path d="M11,32 L22,16 L29,20"
+    fill="none" stroke="#00E5FF" stroke-width="2.2"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Arrow head pointing up-right -->
+  <path d="M24,12 L29,20 L21,20"
+    fill="#00E5FF" fill-opacity="0.9"
+    stroke="#00E5FF" stroke-width="1.2"
+    stroke-linejoin="round"/>
+</svg>
