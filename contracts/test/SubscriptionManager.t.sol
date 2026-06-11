@@ -70,14 +70,47 @@ contract SubscriptionManagerTest is Test {
         assertFalse(manager.isSubscriber(alice));
     }
 
-    function testRevertDoubleSubscribe() public {
+    // ─── v1.1: timed subscriptions (B6) ──────────────────────────────────────
+
+    function testSubscriptionExpiresAfter30Days() public {
+        vm.startPrank(alice);
+        usdg.approve(address(manager), manager.SUBSCRIPTION_FEE());
+        manager.subscribe();
+        vm.stopPrank();
+
+        assertTrue(manager.isSubscriber(alice));
+        vm.warp(block.timestamp + 31 days);
+        assertFalse(manager.isSubscriber(alice));
+    }
+
+    function testRenewalExtendsFromCurrentExpiry() public {
+        vm.startPrank(alice);
+        usdg.approve(address(manager), manager.SUBSCRIPTION_FEE() * 2);
+        manager.subscribe();
+        uint256 firstExpiry = manager.subscriptionExpiry(alice);
+
+        // Renew mid-period: expiry extends from the existing expiry, not from now
+        vm.warp(block.timestamp + 10 days);
+        manager.subscribe();
+        vm.stopPrank();
+
+        assertEq(manager.subscriptionExpiry(alice), firstExpiry + manager.SUBSCRIPTION_PERIOD());
+        assertEq(manager.totalRevenue(), manager.SUBSCRIPTION_FEE() * 2);
+    }
+
+    function testResubscribeAfterLapseStartsFromNow() public {
         vm.startPrank(alice);
         usdg.approve(address(manager), manager.SUBSCRIPTION_FEE() * 2);
         manager.subscribe();
 
-        vm.expectRevert(SubscriptionManager.AlreadySubscribed.selector);
+        vm.warp(block.timestamp + 60 days); // lapsed
+        assertFalse(manager.isSubscriber(alice));
+
         manager.subscribe();
         vm.stopPrank();
+
+        assertEq(manager.subscriptionExpiry(alice), block.timestamp + manager.SUBSCRIPTION_PERIOD());
+        assertTrue(manager.isSubscriber(alice));
     }
 
     function testRevertCancelNotSubscribed() public {

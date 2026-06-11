@@ -86,6 +86,8 @@ contract SignalRegistry is EIP712, Ownable {
     // ─── Errors ───────────────────────────────────────────────────────────────
     error NotKeeper();
     error ProofExpired(uint256 providedTimestamp, uint256 windowStart);
+    error ProofFromFuture(uint256 providedTimestamp, uint256 nowPlusTolerance);
+    error InvalidDirection(uint8 direction);
     error InvalidTicker(string ticker);
     error InvalidPrice();
     error SequenceGap(uint256 expected, uint256 provided);
@@ -125,6 +127,10 @@ contract SignalRegistry is EIP712, Ownable {
         if (timestamp < windowStart) {
             revert ProofExpired(timestamp, windowStart);
         }
+        // Upper bound: 60s tolerance absorbs keeper/chain clock skew
+        if (timestamp > block.timestamp + 60) {
+            revert ProofFromFuture(timestamp, block.timestamp + 60);
+        }
 
         // ── Invariant 4: Input schema validation ──────────────────────────────
         bytes32 tickerHash = keccak256(bytes(ticker));
@@ -132,6 +138,7 @@ contract SignalRegistry is EIP712, Ownable {
             revert InvalidTicker(ticker);
         }
         if (price == 0) revert InvalidPrice();
+        if (direction > 2) revert InvalidDirection(direction);
 
         // ── Invariant 3: Sequence number gap detection ────────────────────────
         uint256 expected = lastSequenceNumber + 1;
@@ -170,15 +177,21 @@ contract SignalRegistry is EIP712, Ownable {
         });
 
         // ── ISignalConsumer: notify registered consumers ──────────────────────
-        _notifyConsumers(ipfsHash, price, direction);
+        _notifyConsumers(signalId, ticker, ipfsHash, price, direction);
 
         emit SignalCommitted(signalId, ticker, price, timestamp, ipfsHash, direction, sequenceNumber);
     }
 
     // ─── Accuracy Ledger: Resolve Signal ─────────────────────────────────────
-    /// @notice Resolve a pending signal. Anyone can call after RESOLVE_DELAY_BLOCKS.
-    /// @dev Compares predicted direction (stored) to actual price movement (provided).
+    /// @notice Resolve a pending signal against the observed market price.
+    /// @dev TRUST MODEL (testnet): resolution price is supplied by the keeper from the
+    ///      same Finnhub feed that triggered the signal. Robinhood Chain testnet has no
+    ///      canonical price oracle to read trustlessly; on mainnet this becomes an
+    ///      oracle read (e.g. EquityPriceOracle) and loses the keeper trust assumption.
+    ///      Keeper-only beats permissionless here: an open resolver with caller-supplied
+    ///      price lets anyone permanently falsify the ledger.
     function resolveSignal(uint256 signalId, uint256 actualPrice) external {
+        if (msg.sender != keeper) revert NotKeeper();
         if (signalId == 0 || signalId > signalCount) revert SignalNotFound(signalId);
         Signal storage signal = signals[signalId];
         if (signal.status != 0) revert SignalNotPending(signalId);
@@ -194,8 +207,8 @@ contract SignalRegistry is EIP712, Ownable {
             uint256 movement = actualPrice > originalPrice
                 ? actualPrice - originalPrice
                 : originalPrice - actualPrice;
-            // movement * 1000 / originalPrice < 5 means < 0.5%
-            correct = (movement * 1000 / originalPrice) < 5;
+            // movement * 10_000 / originalPrice < 50 means < 0.5% (0.01% granularity)
+            correct = (movement * 10_000 / originalPrice) < 50;
         } else {
             bool priceWentUp = actualPrice > originalPrice;
             bool predictedUp = (signal.direction == 0); // 0=BULLISH
@@ -250,10 +263,16 @@ contract SignalRegistry is EIP712, Ownable {
     }
 
     // ─── Internal ─────────────────────────────────────────────────────────────
-    function _notifyConsumers(bytes32 ipfsHash, uint256 price, uint8 direction) internal {
+    function _notifyConsumers(
+        uint256 signalId,
+        string calldata ticker,
+        bytes32 ipfsHash,
+        uint256 price,
+        uint8 direction
+    ) internal {
         for (uint256 i = 0; i < consumers.length; i++) {
             // try/catch: one bad consumer cannot block all others
-            try ISignalConsumer(consumers[i]).onSignalPublished(ipfsHash, price, direction) {
+            try ISignalConsumer(consumers[i]).onSignalPublished(signalId, ticker, ipfsHash, price, direction) {
                 // success
             } catch {
                 // consumer reverted — continue silently

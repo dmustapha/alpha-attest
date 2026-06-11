@@ -29,8 +29,9 @@ contract Deploy is Script {
         SubscriptionManager subscriptionManager = new SubscriptionManager(USDG);
         console.log("SubscriptionManager deployed:", address(subscriptionManager));
 
-        // 3. Deploy MockConsumer with TSLA token address for on-chain equity read
-        MockConsumer mockConsumer = new MockConsumer(TSLA);
+        // 3. Deploy MockConsumer with TSLA token address for on-chain equity read,
+        //    bound to the registry so only it can deliver callbacks (v1.1)
+        MockConsumer mockConsumer = new MockConsumer(TSLA, address(registry));
         console.log("MockConsumer deployed:", address(mockConsumer));
 
         // 4. Register MockConsumer with SignalRegistry (demonstrates ISignalConsumer)

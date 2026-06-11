@@ -26,7 +26,8 @@ interface ISignalRegistry {
     ) external returns (uint256 signalId);
 
     /// @notice Resolve a pending signal by providing the actual price after N blocks.
-    /// @dev Anyone can call. Compares predicted direction to actual movement.
+    /// @dev Keeper-only (testnet trust model — see SignalRegistry.resolveSignal NatSpec).
+    ///      Compares predicted direction to actual movement.
     /// @param signalId The signal to resolve
     /// @param actualPrice Current price (same fixed-point format)
     function resolveSignal(uint256 signalId, uint256 actualPrice) external;

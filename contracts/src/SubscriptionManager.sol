@@ -10,24 +10,24 @@ interface IERC20Minimal {
 }
 
 /// @title SubscriptionManager
-/// @notice Manages USDG-gated subscriptions to AlphaAttest signals.
-/// @dev cancelSubscription() is callable at any time — non-negotiable per spec.
+/// @notice Manages USDG-gated monthly subscriptions to AlphaAttest signals.
+/// @dev v1.1: subscriptions are timed (30 days) and renewable — renewal extends from
+///      max(now, current expiry). cancelSubscription() is callable at any time — per spec.
 contract SubscriptionManager is Ownable {
-    // WARNING: UNVERIFIED — verify USDG decimals before deploy.
-    // If USDG uses 18 decimals (standard ERC20), change to 10 * 1e18.
-    // If USDG uses 6 decimals (USDC-like), this value is correct.
-    uint256 public constant SUBSCRIPTION_FEE = 10 * 1e6; // 10 USDG assuming 6 decimals
+    // USDG (0x7E955252...) verified on-chain: decimals() == 6. Fee = 10 USDG.
+    uint256 public constant SUBSCRIPTION_FEE = 10 * 1e6;
+
+    uint256 public constant SUBSCRIPTION_PERIOD = 30 days;
 
     IERC20Minimal public immutable usdg;
 
-    mapping(address => bool) private _subscribers;
+    mapping(address => uint256) private _subscribedUntil;
     uint256 public totalRevenue;
 
     event Subscribed(address indexed subscriber, uint256 fee);
     event SubscriptionCancelled(address indexed subscriber);
     event FeesWithdrawn(address indexed owner, uint256 amount);
 
-    error AlreadySubscribed();
     error NotSubscribed();
     error PaymentFailed();
 
@@ -36,12 +36,15 @@ contract SubscriptionManager is Ownable {
         usdg = IERC20Minimal(_usdg);
     }
 
-    /// @notice Pay SUBSCRIPTION_FEE USDG to gain access. Requires prior ERC20 approval.
+    /// @notice Pay SUBSCRIPTION_FEE USDG for 30 days of access. Requires prior ERC20 approval.
+    /// @dev Renewals stack: extends from current expiry if still active, from now if lapsed.
     function subscribe() external {
-        if (_subscribers[msg.sender]) revert AlreadySubscribed();
+        uint256 base = _subscribedUntil[msg.sender] > block.timestamp
+            ? _subscribedUntil[msg.sender]
+            : block.timestamp;
 
         // CEI: update state BEFORE external call to prevent reentrancy
-        _subscribers[msg.sender] = true;
+        _subscribedUntil[msg.sender] = base + SUBSCRIPTION_PERIOD;
         totalRevenue += SUBSCRIPTION_FEE;
 
         bool success = usdg.transferFrom(msg.sender, address(this), SUBSCRIPTION_FEE);
@@ -50,16 +53,21 @@ contract SubscriptionManager is Ownable {
         emit Subscribed(msg.sender, SUBSCRIPTION_FEE);
     }
 
-    /// @notice Cancel subscription. No refund on testnet. Callable at any time.
+    /// @notice Cancel subscription immediately. No refund on testnet. Callable at any time.
     function cancelSubscription() external {
-        if (!_subscribers[msg.sender]) revert NotSubscribed();
-        _subscribers[msg.sender] = false;
+        if (_subscribedUntil[msg.sender] <= block.timestamp) revert NotSubscribed();
+        _subscribedUntil[msg.sender] = block.timestamp;
         emit SubscriptionCancelled(msg.sender);
     }
 
     /// @notice Check if an address has an active subscription.
     function isSubscriber(address account) external view returns (bool) {
-        return _subscribers[account];
+        return _subscribedUntil[account] > block.timestamp;
+    }
+
+    /// @notice Unix timestamp at which the account's subscription expires (0 = never subscribed).
+    function subscriptionExpiry(address account) external view returns (uint256) {
+        return _subscribedUntil[account];
     }
 
     /// @notice Withdraw accumulated USDG fees to owner.

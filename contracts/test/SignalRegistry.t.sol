@@ -40,7 +40,7 @@ contract SignalRegistryTest is Test {
 
         registry = new SignalRegistry(keeper);
         mockTSLA = new MockTSLA();
-        consumer = new MockConsumer(address(mockTSLA));
+        consumer = new MockConsumer(address(mockTSLA), address(registry));
 
         registry.registerConsumer(address(consumer));
         DOMAIN_SEPARATOR = registry.getDomainSeparator();
@@ -155,6 +155,7 @@ contract SignalRegistryTest is Test {
         vm.roll(block.number + 51); // past resolve delay
 
         // Price went up → BULLISH was CORRECT
+        vm.prank(keeper);
         registry.resolveSignal(1, TSLA_PRICE_UP);
 
         SignalRegistry.Signal memory s = registry.getSignal(1);
@@ -176,6 +177,7 @@ contract SignalRegistryTest is Test {
         vm.roll(block.number + 51);
 
         // Price went down → BULLISH was INCORRECT
+        vm.prank(keeper);
         registry.resolveSignal(1, 195_00000000);
 
         SignalRegistry.Signal memory s = registry.getSignal(1);
@@ -193,6 +195,7 @@ contract SignalRegistryTest is Test {
         vm.prank(keeper);
         registry.commitSignal("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 0, 1, sig);
 
+        vm.prank(keeper);
         vm.expectRevert();
         registry.resolveSignal(1, TSLA_PRICE_UP); // no vm.roll — too early
     }
@@ -206,9 +209,64 @@ contract SignalRegistryTest is Test {
 
         assertEq(consumer.signalCount(), 1);
         MockConsumer.ReceivedSignal memory received = consumer.getLastSignal();
+        assertEq(received.signalId, 1);
+        assertEq(received.ticker, "TSLA");
         assertEq(received.ipfsHash, SAMPLE_IPFS);
         assertEq(received.price, TSLA_PRICE);
         assertEq(received.direction, 0);
+    }
+
+    // ─── v1.1: ProofFromFuture (B2) ───────────────────────────────────────────
+    function testRevertProofFromFuture() public {
+        uint256 futureTs = block.timestamp + 2 hours;
+        bytes memory sig = _sign("TSLA", TSLA_PRICE, futureTs, SAMPLE_IPFS, 0, 1);
+
+        vm.prank(keeper);
+        vm.expectRevert(
+            abi.encodeWithSelector(SignalRegistry.ProofFromFuture.selector, futureTs, block.timestamp + 60)
+        );
+        registry.commitSignal("TSLA", TSLA_PRICE, futureTs, SAMPLE_IPFS, 0, 1, sig);
+    }
+
+    // ─── v1.1: Future timestamp within 60s tolerance is accepted (B2) ─────────
+    function testFutureTimestampWithinToleranceAccepted() public {
+        uint256 ts = block.timestamp + 59;
+        bytes memory sig = _sign("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 0, 1);
+
+        vm.prank(keeper);
+        registry.commitSignal("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 0, 1, sig);
+        assertEq(registry.signalCount(), 1);
+    }
+
+    // ─── v1.1: InvalidDirection (B3) ──────────────────────────────────────────
+    function testRevertInvalidDirection() public {
+        uint256 ts = block.timestamp - 10;
+        bytes memory sig = _sign("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 3, 1);
+
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(SignalRegistry.InvalidDirection.selector, 3));
+        registry.commitSignal("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 3, 1, sig);
+    }
+
+    // ─── v1.1: Keeper-only resolution (B1) ───────────────────────────────────
+    function testRevertStrangerCannotResolve() public {
+        uint256 ts = block.timestamp - 10;
+        bytes memory sig = _sign("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 0, 1);
+        vm.prank(keeper);
+        registry.commitSignal("TSLA", TSLA_PRICE, ts, SAMPLE_IPFS, 0, 1, sig);
+
+        vm.roll(block.number + 51);
+
+        address stranger = makeAddr("stranger");
+        vm.prank(stranger);
+        vm.expectRevert(SignalRegistry.NotKeeper.selector);
+        registry.resolveSignal(1, TSLA_PRICE_UP);
+    }
+
+    // ─── v1.1: MockConsumer rejects non-registry callers (B5) ────────────────
+    function testMockConsumerDirectCallReverts() public {
+        vm.expectRevert(MockConsumer.NotRegistry.selector);
+        consumer.onSignalPublished(1, "TSLA", SAMPLE_IPFS, TSLA_PRICE, 0);
     }
 
     // ─── AMZN ticker works ────────────────────────────────────────────────────

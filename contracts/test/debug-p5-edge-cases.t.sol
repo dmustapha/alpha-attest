@@ -65,7 +65,7 @@ contract DebugEdgeCasesTest is Test {
         usdg = new MockUSDGEdge();
         registry = new SignalRegistry(keeper);
         subManager = new SubscriptionManager(address(usdg));
-        consumer = new MockConsumer(address(tsla));
+        consumer = new MockConsumer(address(tsla), address(registry));
         registry.registerConsumer(address(consumer));
     }
 
@@ -139,6 +139,7 @@ contract DebugEdgeCasesTest is Test {
 
         // Roll to one block before earliest allowed
         vm.roll(expectedEarliest - 1);
+        vm.prank(keeper);
         vm.expectRevert(
             abi.encodeWithSelector(SignalRegistry.ResolveTooEarly.selector, 1, expectedEarliest)
         );
@@ -153,6 +154,7 @@ contract DebugEdgeCasesTest is Test {
         uint256 signalBlock = block.number;
 
         vm.roll(signalBlock + registry.RESOLVE_DELAY_BLOCKS());
+        vm.prank(keeper);
         registry.resolveSignal(1, 210e8); // should succeed (no revert)
     }
 
@@ -196,20 +198,24 @@ contract DebugEdgeCasesTest is Test {
         vm.prank(keeper);
         registry.commitSignal("TSLA", 200e8, block.timestamp - 1, bytes32(uint256(1)), 0, 1, sig);
         vm.roll(block.number + 51);
+        vm.prank(keeper);
         registry.resolveSignal(1, 210e8);
 
+        vm.prank(keeper);
         vm.expectRevert(abi.encodeWithSelector(SignalRegistry.SignalNotPending.selector, 1));
         registry.resolveSignal(1, 210e8);
     }
 
     /// @notice resolveSignal on nonexistent signalId reverts
     function testResolveNonexistentSignalReverts() public {
+        vm.prank(keeper);
         vm.expectRevert(abi.encodeWithSelector(SignalRegistry.SignalNotFound.selector, 999));
         registry.resolveSignal(999, 100e8);
     }
 
     /// @notice resolveSignal(0, ...) reverts (signalId=0 is invalid by design)
     function testResolveSignalIdZeroReverts() public {
+        vm.prank(keeper);
         vm.expectRevert(abi.encodeWithSelector(SignalRegistry.SignalNotFound.selector, 0));
         registry.resolveSignal(0, 100e8);
     }
@@ -286,8 +292,9 @@ contract DebugEdgeCasesTest is Test {
         vm.roll(block.number + 51);
 
         // 0.5% of $200 = $1.00 => actualPrice = 201_00000000
-        // movement * 1000 / originalPrice = 100000000 * 1000 / 20000000000 = 5
-        // condition: 5 < 5 => false => INCORRECT
+        // movement * 10_000 / originalPrice = 100000000 * 10000 / 20000000000 = 50
+        // condition: 50 < 50 => false => INCORRECT
+        vm.prank(keeper);
         registry.resolveSignal(1, 201_00000000);
         (uint256 correct, uint256 total) = registry.getAccuracyScore();
         assertEq(correct, 0); // INCORRECT
@@ -303,7 +310,8 @@ contract DebugEdgeCasesTest is Test {
         vm.roll(block.number + 51);
 
         // 0.499% of 200 * 1e8 = ~99800000 => actualPrice = 200_99800000
-        // movement = 99800000, movement * 1000 = 99800000000, / 20000000000 = 4 (integer div) < 5 => CORRECT
+        // movement = 99800000, movement * 10_000 / 20000000000 = 49 (integer div) < 50 => CORRECT
+        vm.prank(keeper);
         registry.resolveSignal(1, 200_99800000);
         (uint256 correct,) = registry.getAccuracyScore();
         assertEq(correct, 1); // CORRECT

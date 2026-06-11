@@ -70,7 +70,7 @@ contract DebugIntegrationTest is Test {
 
         registry = new SignalRegistry(keeper);
         subManager = new SubscriptionManager(address(usdg));
-        consumer = new MockConsumer(address(tsla));
+        consumer = new MockConsumer(address(tsla), address(registry));
 
         registry.registerConsumer(address(consumer));
         registry.setSubscriptionManager(address(subManager));
@@ -118,7 +118,7 @@ contract DebugIntegrationTest is Test {
 
     /// @notice Multiple consumers: all receive the signal
     function testMultipleConsumersAllReceive() public {
-        MockConsumer consumer2 = new MockConsumer(address(tsla));
+        MockConsumer consumer2 = new MockConsumer(address(tsla), address(registry));
         registry.registerConsumer(address(consumer2));
 
         _commitSignal(1, 1); // BEARISH
@@ -190,6 +190,7 @@ contract DebugIntegrationTest is Test {
         _commitSignal(0, 1); // BULLISH TSLA
         vm.roll(block.number + 51);
         // BULLISH correct: price went up
+        vm.prank(keeper);
         registry.resolveSignal(1, 210_00000000);
         (uint256 correct, uint256 total) = registry.getAccuracyScore();
         assertEq(correct, 1);
@@ -200,6 +201,7 @@ contract DebugIntegrationTest is Test {
         _commitSignal(0, 1); // BULLISH TSLA
         vm.roll(block.number + 51);
         // BULLISH incorrect: price went down
+        vm.prank(keeper);
         registry.resolveSignal(1, 190_00000000);
         (uint256 correct, uint256 total) = registry.getAccuracyScore();
         assertEq(correct, 0);
@@ -216,6 +218,7 @@ contract DebugIntegrationTest is Test {
         registry.commitSignal("TSLA", price, block.timestamp - 1, ipfs, 2, seq, sig);
         vm.roll(block.number + 51);
         // 0.1% move — well under 0.5% threshold
+        vm.prank(keeper);
         registry.resolveSignal(1, 200_20000000); // +0.1%
         (uint256 correct, uint256 total) = registry.getAccuracyScore();
         assertEq(correct, 1);
@@ -232,7 +235,7 @@ contract DebugIntegrationTest is Test {
 
 /// @notice Consumer that always reverts — used to test try/catch in _notifyConsumers
 contract RevertingConsumer is ISignalConsumer {
-    function onSignalPublished(bytes32, uint256, uint8) external pure override {
+    function onSignalPublished(uint256, string calldata, bytes32, uint256, uint8) external pure override {
         revert("RevertingConsumer: always fails");
     }
 }
