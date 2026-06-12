@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "mode": "hybrid",
+  "status": "complete",
+  "overall": "WARN",
+  "testedAt": "2026-06-11T10:45:00Z",
+  "testedUrl": "https://alpha-attest.vercel.app",
+  "regressionBaseline": {
+    "v1": { "pass": 14, "fail": 0, "skip": 0 },
+    "v2": { "pass": 44, "fail": 0, "skip": 6, "warn": 1 }
+  },
+  "interfaceInventory": [
+    { "channel": "browser", "endpoint": "https://alpha-attest.vercel.app/", "priority": "high", "tested": true },
+    { "channel": "browser", "endpoint": "https://alpha-attest.vercel.app/verify/1", "priority": "high", "tested": true },
+    { "channel": "browser", "endpoint": "https://alpha-attest.vercel.app/proof", "priority": "high", "tested": true },
+    { "channel": "sse", "endpoint": "/api/notify", "priority": "medium", "tested": true },
+    { "channel": "contract", "endpoint": "SignalRegistry 0x09522dB7a983a675ba4E19BC9bc0896110b80C6A", "priority": "high", "tested": true },
+    { "channel": "contract", "endpoint": "SubscriptionManager 0x566BEAa729E8E1e6cde30446546279BD30e5630d", "priority": "high", "tested": true },
+    { "channel": "contract", "endpoint": "MockConsumer 0x6114270e211C2cd5542D9972caF6F0D51FbA7105", "priority": "high", "tested": true }
+  ],
+  "domains": {
+    "core_flows": { "status": "PASS", "notes": "7 signals loaded, verify/1 fingerprint match, proof page functional, accuracy 100%", "flowsTested": 8, "flowsFailed": 0 },
+    "api_connectivity": { "status": "PASS", "notes": "200 on all routes; SSE timeout expected (design constraint)", "apisChecked": 4, "apisFailed": 0 },
+    "visual": { "status": "PASS", "notes": "No broken images, no placeholders" },
+    "forms": { "status": "PASS", "notes": "Subscribe button in correct pre-wallet state" },
+    "console_errors": { "status": "WARN", "errorCount": 3, "errors": ["3x IPFS cache 404 on dashboard (SampleSignals — P1)"] },
+    "auth": { "status": "PASS", "notes": "Connect Wallet buttons present; headless cannot complete MetaMask flow" },
+    "mobile": { "status": "PASS", "notes": "scrollWidth=375 <= clientWidth=375" },
+    "post_prd": { "status": "WARN", "notes": "SampleSignals empty due to IPFS cache gap (P1)" },
+    "integration_proof": { "status": "PASS", "proofs": [
+      { "integration": "Keeper → SignalRegistry.commitSignal", "hash": "0x3895ed8b985ba5827bffb8e5c3e74db647d3a0783a689e2d26e16dd8153ce449" },
+      { "integration": "SignalRegistry → MockConsumer.onSignalPublished", "hash": "MockConsumer.signalCount=7 matches" },
+      { "integration": "Frontend → SignalRegistry (wagmi)", "hash": "7 signals loaded, accuracy 100%" },
+      { "integration": "Frontend → IPFS (bytes32ToCid)", "hash": "/verify/1 verified — CID QmTphVah..." },
+      { "integration": "Keeper → Pinata IPFS", "hash": "Signal #5 TX: 0xaacd0662..." },
+      { "integration": "MockConsumer → TSLA ERC-20", "hash": "TSLA_TOKEN=0xC9f9c869..." }
+    ]},
+    "budget": { "status": "PASS", "spent": 0, "budget": 0 }
+  },
+  "methodCoverage": {
+    "SignalRegistry": {
+      "total": 11,
+      "tested": 11,
+      "methods": ["signalCount", "getSignal", "getAccuracyScore", "getConsumers", "keeper", "subscriptionManager", "lastSequenceNumber", "PROOF_EXPIRY_WINDOW", "RESOLVE_DELAY_BLOCKS", "getDomainSeparator", "commitSignal(source-verified)"]
+    },
+    "SubscriptionManager": {
+      "total": 5,
+      "tested": 5,
+      "methods": ["SUBSCRIPTION_FEE", "totalRevenue", "isSubscriber", "subscribe(source-verified)", "withdrawFees(source-verified)"]
+    },
+    "MockConsumer": {
+      "total": 3,
+      "tested": 3,
+      "methods": ["signalCount", "getLastSignal", "TSLA_TOKEN"]
+    }
+  },
+  "multiChannelMatrix": {
+    "signalCount": { "contract": "PASS", "browser": "PASS" },
+    "accuracyScore": { "contract": "PASS", "browser": "PASS" },
+    "signalData": { "contract": "PASS", "browser": "PASS" },
+    "contractAddresses": { "contract": "PASS", "browser": "PASS" },
+    "sseStream": { "rest": "PASS" },
+    "sampleSignals": { "contract": "PASS", "browser": "WARN" }
+  },
+  "adversarialResults": {
+    "adv01_boundary": "PASS",
+    "adv02_boundary": "PASS",
+    "adv03_zeroAddr": "PASS",
+    "adv04_urlEdge": "PASS",
+    "adv05_urlEdge": "PASS",
+    "adv06_urlEdge": "PASS",
+    "adv07_emptyPost": "PASS",
+    "adv08_wrongCaller": "SKIP (unit-verified)"
+  },
+  "patchRuns": [],
+  "crossIntegrationProofs": [
+    { "integration": "Keeper → SignalRegistry.commitSignal", "hash": "0x3895ed8b..." },
+    { "integration": "SignalRegistry → MockConsumer", "hash": "signalCount=7 match" },
+    { "integration": "Frontend → SignalRegistry", "hash": "7 signals + accuracy 100%" },
+    { "integration": "Frontend → IPFS", "hash": "CID QmTphVah... verified" },
+    { "integration": "Keeper → Pinata", "hash": "0xaacd0662..." },
+    { "integration": "MockConsumer → TSLA ERC-20", "hash": "0xC9f9c869..." }
+  ],
+  "testPlan": {
+    "present": true,
+    "sourceMappingComplete": true,
+    "planConstructionComplete": true,
+    "criticalReviewComplete": true,
+    "sourceFilesRead": 30,
+    "testCounts": { "v1": 14, "v2": 29, "v3": 8 },
+    "codeReviewOnlyCount": 1,
+    "designConstraintCount": 4
+  },
+  "p0Blockers": [],
+  "p1Warnings": [
+    "SampleSignals IPFS cache gap — signals #2, #3 CIDs not in frontend/public/ipfs-cache/; Pinata gateway 500",
+    "3 console 404 errors on dashboard from IPFS cache misses"
+  ],
+  "p2Cosmetic": [],
+  "criticalIssues": [],
+  "warnings": [
+    "SampleSignals empty on dashboard (IPFS cache gap)"
+  ],
+  "screenshots": [
+    "screenshots/livetest-v2-dashboard.png",
+    "screenshots/livetest-v2-verify.png",
+    "screenshots/livetest-v2-proof.png",
+    "screenshots/livetest-v2-mobile.png"
+  ],
+  "reportPath": "/Users/MAC/arbitrum-london/AlphaAttest/LIVETEST-V2-REPORT.md",
+  "blockerReason": null
+}

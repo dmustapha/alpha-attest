@@ -10,19 +10,31 @@ Hackathon: [Arbitrum Open House London: Online Buildathon](https://arbitrum-lond
 
 ## The Problem
 
-AI-managed financial assets crossed $1 trillion globally in 2024. Zero of it has cryptographic accountability for AI decision reasoning. Every AI recommendation (from hedge fund algorithms to robo-advisor signals) is unverifiable by design. The AI could have generated the analysis after the price moved, or changed it silently.
+AI agents are starting to manage real money, but none of them have an auditable performance history. A fund manager has a track record regulators can check; an AI signal service can quietly delete its bad calls and showcase the winners. Every AI recommendation is unverifiable by design — the analysis could have been generated after the price moved, or edited after the fact, and you'd never know.
 
 ## The Solution
 
-AlphaAttest makes every AI financial analysis permanently auditable:
+AlphaAttest is a commit-reveal accountability primitive applied to AI reasoning — proof expiry, identity binding, sequence integrity, and schema validation — with the analysis itself, not the trade, as the product:
 
 1. A keeper watches TSLA and AMZN prices via Finnhub WebSocket
-2. On any >1% price move, Claude generates a 400+ word analysis
+2. On any >1% price move, Claude generates a 400+ word analysis grounded in the live session quote
 3. The analysis is uploaded to IPFS (content-addressed, immutable)
 4. The IPFS hash is EIP-712 signed and committed to Robinhood Chain **before** the signal is published
-5. Anyone can verify any signal at any time: the on-chain hash must match the live document
+5. Anyone can verify any signal at any time — the verify page recomputes the document's SHA-256 *in your browser* and compares it to the on-chain record
 
-If the analysis was edited after publishing, the fingerprints won't match. This is the first cryptographic performance bond for AI investment advice.
+If the analysis was edited after publishing, even by one character, the fingerprints won't match. Misses are preserved forever. That's the point.
+
+---
+
+## Try It as a Judge (no wallet needed)
+
+The full judge path requires nothing but a browser:
+
+1. Open https://alpha-attest.vercel.app — the Track Record strip shows every call ever made, including the wrong ones, each chip linking to its proof.
+2. Click **Verify** on any signal. Your own browser recomputes the document's SHA-256 and compares it against the on-chain bytes32 — the "Verified" badge is computed client-side, not asserted by our server.
+3. Open the raw document on ipfs.io and the commit block on the explorer from the same page.
+
+Subscribing (10 USDG / 30 days, on-chain timed) is only needed to read full analyses in the feed. Testnet USDG comes from the [Robinhood Chain faucet](https://faucet.testnet.chain.robinhood.com/); if the faucet only dispenses gas ETH, browsing and verifying still works for everything above.
 
 ---
 
@@ -30,11 +42,17 @@ If the analysis was edited after publishing, the fingerprints won't match. This 
 
 | Contract | Address | Role |
 |----------|---------|------|
-| SignalRegistry | [`0x09522dB7a983a675ba4E19BC9bc0896110b80C6A`](https://explorer.testnet.chain.robinhood.com/address/0x09522dB7a983a675ba4E19BC9bc0896110b80C6A) | Core accountability primitive |
-| SubscriptionManager | [`0x566BEAa729E8E1e6cde30446546279BD30e5630d`](https://explorer.testnet.chain.robinhood.com/address/0x566BEAa729E8E1e6cde30446546279BD30e5630d) | USDG-gated access control |
-| MockConsumer | [`0x6114270e211C2cd5542D9972caF6F0D51FbA7105`](https://explorer.testnet.chain.robinhood.com/address/0x6114270e211C2cd5542D9972caF6F0D51FbA7105) | ISignalConsumer composability demo |
+| SignalRegistry v1.1 | [`0x23CD0368f1471de25E4F90f1bb2217E4Fc17bC56`](https://explorer.testnet.chain.robinhood.com/address/0x23CD0368f1471de25E4F90f1bb2217E4Fc17bC56) | Core accountability primitive |
+| SubscriptionManager v1.1 | [`0xf24d7B0481BCFEE1d8D9D7bF27368619A597eefF`](https://explorer.testnet.chain.robinhood.com/address/0xf24d7B0481BCFEE1d8D9D7bF27368619A597eefF) | USDG-gated timed subscriptions (30 days, renewable) |
+| MockConsumer v1.1 | [`0x4C92099fc1b242C7B21e66af78d60fa09db3f17c`](https://explorer.testnet.chain.robinhood.com/address/0x4C92099fc1b242C7B21e66af78d60fa09db3f17c) | ISignalConsumer composability demo |
 
-**Deploy TX:** [0xdd865d8f...](https://explorer.testnet.chain.robinhood.com/tx/0xdd865d8f3346bd4d6c335a64a814bcfa9b3c6ea327b6a5440be11190bdcb4a81)
+**Deploy TX:** [0x4917dc5f...](https://explorer.testnet.chain.robinhood.com/tx/0x4917dc5f2cd1c72965cb4eaeb3a1286b94aacc83eddd032c04e3cab33e77c7d8) · v1 addresses preserved as deployment history in [submission/proof.md](submission/proof.md)
+
+### Testnet trust model
+
+Resolution prices are supplied by the keeper from the same Finnhub feed that triggered the signal — Robinhood Chain testnet has no canonical price oracle to read trustlessly, and an open resolver with caller-supplied prices would let anyone permanently falsify the ledger, so `resolveSignal` is keeper-only with the trade-off documented in the contract's NatSpec. On mainnet this becomes an oracle read and the trust assumption disappears.
+
+One more honest note: on testnet, the subscription gates the rendered experience, not the documents. The analyses are public by design — provenance, not secrecy, is the product. Production would add threshold encryption (e.g., Lit) for paid content.
 
 ---
 
@@ -77,7 +95,8 @@ Frontend Dashboard
 | **Anthropic Claude** | claude-haiku-4-5 generates the analysis; system prompt tuned for financial signal generation | Deep |
 | **OpenZeppelin** | EIP712, ECDSA, Ownable, IERC20 across all contracts | Deep |
 | **Alchemy** | RPC provider + Notify webhook for real-time signal feed | Moderate |
-| **Pinata IPFS** | Primary IPFS pin for every analysis document; Storacha as fallback | Moderate |
+| **Pinata IPFS** | Every analysis document pinned before its hash is committed on-chain | Moderate |
+| **Finnhub** | Live trade stream (WebSocket w/ heartbeat) + session quotes grounding every analysis | Deep |
 
 ---
 
@@ -103,9 +122,12 @@ forge test
 cd keeper
 npm install
 cp .env.example .env
-# Fill in: FINNHUB_API_KEY, ANTHROPIC_API_KEY, PINATA_JWT, KEEPER_PRIVATE_KEY, ALCHEMY_API_KEY
+# Fill in: FINNHUB_API_KEY, ANTHROPIC_API_KEY, PINATA_JWT, KEEPER_PRIVATE_KEY,
+#          ALCHEMY_API_KEY, SIGNAL_REGISTRY_ADDRESS
 npm start
 ```
+
+On startup the keeper scans the registry and re-queues any still-pending signal — the chain itself is the durable resolve queue, so restarts lose nothing.
 
 ### Frontend
 
@@ -123,13 +145,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Verification
 
-Any signal can be independently verified:
+Any signal can be independently verified, and the verification is real computation in the visitor's browser:
 
 1. Visit `/verify/{signalId}` on the frontend
 2. The page reads the `ipfsHash` from the on-chain Signal struct
-3. Fetches the IPFS document at that CID
-4. Computes the content address and compares to the on-chain hash
-5. Match = the analysis is unchanged since publication
+3. Fetches the exact document bytes (local cache → ipfs.io → Pinata gateway)
+4. Recomputes SHA-256 over those bytes via `crypto.subtle` and compares it to the on-chain bytes32 — both hashes are displayed side by side
+5. Match = the analysis is unchanged since publication. A mismatch renders its own distinct failure state, because exposing tampering is the entire product.
 
 Try it on the live demo: `/verify/1`
 
@@ -150,7 +172,7 @@ Try it on the live demo: `/verify/1`
 | Smart Contracts | Solidity 0.8.24, Foundry, OpenZeppelin 5.x |
 | Keeper | Node.js 20, TypeScript, viem 2.x |
 | AI | @anthropic-ai/sdk, claude-haiku-4-5 |
-| Storage | Pinata IPFS (primary), Storacha (fallback) |
+| Storage | Pinata IPFS |
 | Frontend | Next.js 14, wagmi 2.x, viem 2.x |
 | Chain | Robinhood Chain Testnet (Chain ID 46630) |
 | RPC | Alchemy |
@@ -168,11 +190,11 @@ AlphaAttest/
 │       └── MockConsumer.sol        # ISignalConsumer demo
 ├── keeper/             # Node.js keeper: watches prices, generates signals
 │   └── src/
-│       ├── clients/    # Finnhub, Anthropic, Pinata, Storacha, Chain
+│       ├── clients/    # Finnhub, Anthropic, Pinata, Chain
 │       └── orchestrator.ts
 ├── frontend/           # Next.js dashboard + verify UI
 │   └── src/
 │       ├── app/        # Pages (dashboard, verify, proof)
-│       └── components/ # SignalCard, AnalysisViewer, SampleSignals
+│       └── components/ # SignalCard, TrackRecord, SampleSignals
 └── submission/         # Proof, links, sponsor track documentation
 ```
