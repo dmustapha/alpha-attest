@@ -27,4 +27,17 @@ const orchestrator = new SignalOrchestrator({
   registryAddress: process.env.SIGNAL_REGISTRY_ADDRESS as `0x${string}`,
 });
 
-orchestrator.start();
+// Graceful shutdown: every Railway redeploy sends SIGTERM. Pending resolutions
+// are recovered by the startup scan, so a clean exit loses nothing.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    console.log(`[Keeper] ${signal} — draining`);
+    orchestrator.stop();
+    process.exit(0);
+  });
+}
+
+orchestrator.start().catch((err) => {
+  console.error("[Keeper] Fatal startup error:", err);
+  process.exit(1);
+});

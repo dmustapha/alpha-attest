@@ -98,6 +98,7 @@ export class PinataClient {
         method: "POST",
         headers: { Authorization: `Bearer ${this.jwt}` },
         body: formData,
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (v3res.ok) {
@@ -128,6 +129,7 @@ export class PinataClient {
             pinataContent: content,
             pinataMetadata: { name: filename },
           }),
+          signal: AbortSignal.timeout(15_000),
         });
 
         if (ksRes.ok) {
@@ -156,6 +158,7 @@ export class PinataClient {
         pinataContent: content,
         pinataMetadata: { name: filename },
       }),
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!v2res.ok) {

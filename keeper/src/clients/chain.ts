@@ -33,7 +33,22 @@ const REGISTRY_ABI = parseAbi([
   "function resolveSignal(uint256 signalId, uint256 actualPrice)",
   "function lastSequenceNumber() view returns (uint256)",
   "function signalCount() view returns (uint256)",
+  "function getSignal(uint256 signalId) view returns ((uint256 id, string ticker, uint256 price, uint256 timestamp, bytes32 ipfsHash, uint8 direction, uint256 sequenceNumber, bytes keeperSignature, uint256 blockNumber, uint8 status, uint256 resolvedPrice))",
 ]);
+
+export interface OnChainSignal {
+  id: bigint;
+  ticker: string;
+  price: bigint;
+  timestamp: bigint;
+  ipfsHash: `0x${string}`;
+  direction: number;
+  sequenceNumber: bigint;
+  keeperSignature: `0x${string}`;
+  blockNumber: bigint;
+  status: number; // 0=PENDING, 1=CORRECT, 2=INCORRECT
+  resolvedPrice: bigint;
+}
 
 export class ChainClient {
   private readonly walletClient;
@@ -109,5 +124,14 @@ export class ChainClient {
       abi: REGISTRY_ABI,
       functionName: "signalCount",
     })) as bigint;
+  }
+
+  async getSignal(signalId: bigint): Promise<OnChainSignal> {
+    return (await this.publicClient.readContract({
+      address: this.registryAddress,
+      abi: REGISTRY_ABI,
+      functionName: "getSignal",
+      args: [signalId],
+    })) as OnChainSignal;
   }
 }
