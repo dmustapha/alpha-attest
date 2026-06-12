@@ -109,3 +109,19 @@
   v1.1 signal. Append TX hashes to proof.md AUTONOMOUS-TX-LOG as they land.
 - After Vercel login: deploy frontend, verify /verify/<new> end-to-end.
 - Friday: demo video during market hours (F1 beats in MASTERFIX).
+
+## [masterfix-deploy] 2026-06-12T05:00:00Z
+
+**Keeper: LIVE ON RENDER (free tier).**
+- Service: srv-d8loq0s8aovs73drestg | https://alphaattest-keeper.onrender.com
+- Deployed from mirror repo github.com/damilolaaa-stack/alpha-attest (public,
+  anonymously cloneable). Canonical repo dmustapha/alpha-attest is shadow-flagged
+  by GitHub (profile+repos 404 to logged-out users) — reinstatement ticket is the
+  user's action item; affects judge-facing repo link too.
+- Runtime verified: Recovery scan ✓, resolver ✓, /healthz public ✓, self-ping ✓.
+- Local keeper STOPPED (clean SIGTERM drain) — free Finnhub key allows one WS;
+  two keepers were fighting over it.
+- Frontend live on Vercel since earlier tonight (v1.1 address verified in bundle).
+
+**Workflow note:** every future push must go to BOTH remotes: `git push origin main
+&& git push mirror main` (mirror is what Render auto-deploys from).

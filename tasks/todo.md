@@ -10,15 +10,18 @@
 - [x] proof.md v1.1 section (v1 kept as superseded history), README refresh (F2/F3)
 - [x] Local env files updated to v1.1 addresses
 
-## Blocked on user (one-time logins)
-- [ ] `railway login` → deploy keeper (railway.json ready)
-- [ ] `vercel login` → `vercel --prod` from frontend/
-- [ ] Confirm HackQuest registration — CLOSES JUNE 12
+## Done (Thu morning Jun 12)
+- [x] Registration confirmed on HackQuest
+- [x] Frontend deployed to Vercel prod (v1.1 address verified in bundle)
+- [x] Keeper LIVE on Render free tier via mirror repo damilolaaa-stack/alpha-attest
+- [x] Local keeper stopped (clean drain) — Render owns the Finnhub WS now
+
+## Blocked on user
+- [ ] GitHub reinstatement ticket for dmustapha (judges see 404!) — support.github.com/contact/reinstatement
 
 ## Thu Jun 12 (market 13:30-20:00 UTC)
 - [ ] First autonomous signal commits + resolves on v1.1 — collect TX hashes
 - [ ] Append autonomous TXs to submission/proof.md AUTONOMOUS-TX-LOG
-- [ ] Deploy frontend once Vercel auth restored; verify /verify/<new> live
 - [ ] Livetest V3 regression against v1.1
 
 ## Fri Jun 13
