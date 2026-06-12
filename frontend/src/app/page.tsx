@@ -5,11 +5,39 @@ import Link from "next/link";
 import Nav from "../components/Nav";
 import { useAccount, useConnect, useChainId } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { useSignals, useAccuracyScore } from "../hooks/useSignals";
+import { useSignals } from "../hooks/useSignals";
+import type { OnChainSignal } from "../hooks/useSignals";
 import { useSubscription } from "../hooks/useSubscription";
 import SignalCard from "../components/SignalCard";
 import SampleSignals from "../components/SampleSignals";
 import SubscribeButton from "../components/SubscribeButton";
+import TrackRecord from "../components/TrackRecord";
+
+// [E3] Liveness derived purely from on-chain data: the latest signal's age.
+function AgentStatus({ signals }: { signals: OnChainSignal[] }) {
+  const latest = signals[0];
+  if (!latest) {
+    return (
+      <span className="aa-agent-status">
+        Keeper monitoring TSLA, AMZN via Finnhub · signals commit on &gt;1% moves
+      </span>
+    );
+  }
+  const ageMs = Date.now() - Number(latest.timestamp) * 1000;
+  const mins = Math.floor(ageMs / 60_000);
+  const rel =
+    mins < 1 ? "just now"
+    : mins < 60 ? `${mins} min ago`
+    : mins < 60 * 48 ? `${Math.floor(mins / 60)}h ago`
+    : `${Math.floor(mins / 1440)}d ago`;
+  const live = ageMs < 24 * 3600 * 1000;
+  return (
+    <span className="aa-agent-status" data-live={live}>
+      {live ? "⚡ Keeper live — " : "Keeper idle — "}
+      last signal {rel} · monitoring TSLA, AMZN via Finnhub
+    </span>
+  );
+}
 
 function OnboardingBlock() {
   const [open, setOpen] = useState(false);
@@ -59,17 +87,11 @@ export default function Dashboard() {
   const chainId = useChainId();
   const isWrongNetwork = isConnected && chainId !== 46630;
   const { signals, loading, error } = useSignals();
-  const accuracyScore = useAccuracyScore();
   const { isSubscriber, checkSubscription } = useSubscription();
 
   useEffect(() => {
     if (isConnected) checkSubscription();
   }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const accuracyPct =
-    accuracyScore && Number(accuracyScore.total) > 0
-      ? Math.round((Number(accuracyScore.correct) * 100) / Number(accuracyScore.total))
-      : null;
 
   return (
     <>
@@ -101,23 +123,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Stats strip */}
-        <div className="aa-stats" style={{ gridTemplateColumns: accuracyPct !== null ? "repeat(2,1fr)" : "1fr" }}>
-          <div className="aa-stat">
-            <span className="aa-stat-label">Signals Published</span>
-            <span className="aa-stat-value">{loading ? "—" : signals.length}</span>
-            <span className="aa-stat-sub">TSLA · AMZN</span>
-          </div>
-          {accuracyPct !== null && (
-            <div className="aa-stat">
-              <span className="aa-stat-label">Accuracy</span>
-              <span className="aa-stat-value">{accuracyPct}%</span>
-              <span className="aa-stat-sub">
-                {accuracyScore!.correct.toString()}/{accuracyScore!.total.toString()} resolved
-              </span>
-            </div>
-          )}
-        </div>
+        {/* [E1] Track record — the permanent report card is the product */}
+        <TrackRecord signals={signals} loading={loading} />
 
         {/* How it works */}
         <div className="aa-how-section">
@@ -227,9 +234,7 @@ export default function Dashboard() {
             <span className="aa-live-dot" />
             Live Signals
           </div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-4)" }}>
-            Live
-          </span>
+          <AgentStatus signals={signals} />
         </div>
 
         {/* Error state */}

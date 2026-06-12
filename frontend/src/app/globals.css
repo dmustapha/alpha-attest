@@ -20,7 +20,7 @@
   --text:         #e8e8e8;
   --text-2:       #a0a0a0;
   --text-3:       #626262;
-  --text-4:       #383838;
+  --text-4:       #4a4a4a;
 
   /* Status */
   --ok:           #3dd68c;
@@ -250,7 +250,7 @@ a:hover { opacity: 0.75; }
 
 .aa-stat-label { font-size: 10px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); }
 .aa-stat-value { font-size: 22px; font-family: var(--font-mono); font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
-.aa-stat-sub   { font-size: 10px; font-family: var(--font-mono); color: var(--text-3); }
+.aa-stat-sub   { font-size: 11px; font-family: var(--font-mono); color: var(--text-3); }
 
 /* ── Bloomberg strip ── */
 .aa-insight {
@@ -835,7 +835,7 @@ a:hover { opacity: 0.75; }
 /* ── Signal card direction gloss ── */
 .aa-dir-gloss {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-4);
   margin-top: 3px;
   letter-spacing: 0.04em;
@@ -961,4 +961,142 @@ a:hover { opacity: 0.75; }
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── [E1] Track Record strip ── */
+.aa-track {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.aa-track-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 14px;
+}
+
+.aa-track-accuracy {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.aa-track-denominator {
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0;
+}
+
+.aa-track-count {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: 6px;
+  text-align: right;
+}
+
+.aa-track-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.aa-track-chip {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-decoration: none;
+  transition: transform var(--f-max) ease, border-color var(--f-max) ease;
+}
+.aa-track-chip:hover { transform: translateY(-2px); border-color: var(--border-hi); }
+.aa-track-chip[data-outcome="correct"]   { color: var(--ok);     background: var(--ok-dim);     border: 1px solid rgba(61,214,140,0.25); }
+.aa-track-chip[data-outcome="incorrect"] { color: var(--danger); background: var(--danger-dim); border: 1px solid rgba(244,112,103,0.25); }
+.aa-track-chip[data-outcome="pending"]   { color: var(--text-3); background: var(--surface-2);  border: 1px solid var(--border); }
+
+.aa-track-tagline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+/* ── [E2] Trigger move on signal cards ── */
+.aa-signal-trigger {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin-left: 8px;
+}
+.aa-signal-trigger[data-up="true"]  { color: var(--ok); }
+.aa-signal-trigger[data-up="false"] { color: var(--danger); }
+
+/* ── [E3] Agent status line ── */
+.aa-agent-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.aa-agent-status[data-live="true"] { color: var(--ok); }
+
+/* ── [E5] Analysis dimensions on /verify ── */
+.aa-dim-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.aa-dim {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.aa-dim summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.aa-dim summary::-webkit-details-marker { display: none; }
+.aa-dim summary::after { content: "+"; color: var(--text-3); font-size: 13px; }
+.aa-dim[open] summary::after { content: "−"; }
+
+.aa-dim-body {
+  padding: 0 14px 12px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.65;
+  white-space: pre-wrap;
 }

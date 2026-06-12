@@ -20,6 +20,7 @@ const STATUS_LABEL = { 0: "PENDING", 1: "CORRECT", 2: "INCORRECT" } as const;
 
 export default function SignalCard({ signal, isSubscriber }: Props) {
   const [analysisPreview, setAnalysisPreview] = useState<string | null>(null);
+  const [triggerPct, setTriggerPct] = useState<number | null>(null);
   const cid = bytes32ToCidV1(signal.ipfsHash);
   const price = `$${(Number(signal.price) / 1e8).toFixed(2)}`;
   const time = new Date(Number(signal.timestamp) * 1000).toLocaleString("en-US", {
@@ -31,13 +32,18 @@ export default function SignalCard({ signal, isSubscriber }: Props) {
   const dirLabel = DIR_LABEL[dir];
 
   useEffect(() => {
-    if (!isSubscriber) return;
+    // The document is public by design — its metadata (the trigger move) shows
+    // for everyone; only the analysis preview text is gated to subscribers.
     fetchAnalysis(signal.ipfsHash)
       .then(doc => {
-        const text = String((doc as Record<string, unknown>).analysis ?? "");
-        setAnalysisPreview(text.slice(0, 160).trim() || "");
+        const d = doc as Record<string, unknown>;
+        if (typeof d.priceChangePct === "number") setTriggerPct(d.priceChangePct);
+        if (isSubscriber) {
+          const text = String(d.analysis ?? "");
+          setAnalysisPreview(text.slice(0, 160).trim() || "");
+        }
       })
-      .catch(() => setAnalysisPreview(""));
+      .catch(() => { if (isSubscriber) setAnalysisPreview(""); });
   }, [signal.ipfsHash, isSubscriber]);
 
   return (
@@ -50,7 +56,14 @@ export default function SignalCard({ signal, isSubscriber }: Props) {
       </div>
 
       <div className="aa-signal-price-block">
-        <div className="aa-signal-price">{price}</div>
+        <div className="aa-signal-price">
+          {price}
+          {triggerPct !== null && (
+            <span className="aa-signal-trigger" data-up={triggerPct >= 0} title="The price move that triggered this signal">
+              {triggerPct >= 0 ? "▲ +" : "▼ −"}{Math.abs(triggerPct).toFixed(2)}%
+            </span>
+          )}
+        </div>
         <div className="aa-signal-time">{time}</div>
       </div>
 

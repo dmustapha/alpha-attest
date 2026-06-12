@@ -215,14 +215,38 @@ export default function VerifySignal() {
                   )}
                 </div>
                 {(() => {
-                  const text = String(ipfsDoc.analysis ?? "");
-                  const paragraphs = text.split(/\n{2,}/).filter(Boolean);
-                  return paragraphs.length > 1 ? (
-                    <div className="aa-analysis-text">
-                      {paragraphs.map((p, i) => <p key={i} style={{ marginBottom: "1em" }}>{String(p)}</p>)}
+                  // Six-dimension breakdown — each section of the locked document,
+                  // independently expandable
+                  const dims = (ipfsDoc.dimensions ?? {}) as Record<string, unknown>;
+                  const DIM_LABELS: Array<[string, string]> = [
+                    ["priceTrend", "Price Trend"],
+                    ["volume", "Volume Analysis"],
+                    ["sectorContext", "Sector Context"],
+                    ["confidence", "Confidence Assessment"],
+                    ["investmentThesis", "Investment Thesis"],
+                    ["riskFactors", "Risk Factors"],
+                  ];
+                  const present = DIM_LABELS.filter(([k]) => typeof dims[k] === "string" && (dims[k] as string).length > 0);
+                  if (present.length === 0) {
+                    const text = String(ipfsDoc.analysis ?? "");
+                    const paragraphs = text.split(/\n{2,}/).filter(Boolean);
+                    return paragraphs.length > 1 ? (
+                      <div className="aa-analysis-text">
+                        {paragraphs.map((p, i) => <p key={i} style={{ marginBottom: "1em" }}>{String(p)}</p>)}
+                      </div>
+                    ) : (
+                      <div className="aa-analysis-text">{text}</div>
+                    );
+                  }
+                  return (
+                    <div className="aa-dim-grid">
+                      {present.map(([key, label], i) => (
+                        <details key={key} className="aa-dim" open={i === 0}>
+                          <summary>{label}</summary>
+                          <div className="aa-dim-body">{String(dims[key])}</div>
+                        </details>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="aa-analysis-text">{text}</div>
                   );
                 })()}
               </div>
