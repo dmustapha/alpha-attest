@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 config();
 
+import { createServer } from "http";
 import { SignalOrchestrator } from "./orchestrator.js";
 
 const REQUIRED_ENV = [
@@ -41,3 +42,12 @@ orchestrator.start().catch((err) => {
   console.error("[Keeper] Fatal startup error:", err);
   process.exit(1);
 });
+
+// Health endpoint. The keeper runs as a free Render web service, which spins
+// down after 15 minutes without inbound traffic — a scheduled GitHub Actions
+// ping against /healthz keeps the Finnhub stream connected around the clock.
+const port = Number(process.env.PORT ?? 8080);
+createServer((_req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ ok: true, uptimeSeconds: Math.floor(process.uptime()) }));
+}).listen(port, () => console.log(`[Health] listening on :${port}`));

@@ -1,16 +1,19 @@
 # Render Blueprint — AlphaAttest keeper
-# Background worker: no HTTP port, long-running process. Render restarts
-# crashed workers automatically (the old railway.json ALWAYS policy maps to
-# default behavior here). Note: workers require the paid starter plan.
+# Free web service (not a worker): Render's free tier requires an HTTP port,
+# so the keeper exposes /healthz and a scheduled GitHub Actions ping keeps it
+# from spinning down (free services sleep after 15 idle minutes). Render
+# restarts crashed services automatically; the keeper's startup scan recovers
+# any pending resolutions from the chain, so restarts are lossless.
 services:
-  - type: worker
+  - type: web
     name: alphaattest-keeper
     runtime: docker
     repo: https://github.com/dmustapha/alpha-attest
     branch: main
     rootDir: keeper
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
+    healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: FINNHUB_API_KEY
