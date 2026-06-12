@@ -1,0 +1,27 @@
+# Render Blueprint — AlphaAttest keeper
+# Background worker: no HTTP port, long-running process. Render restarts
+# crashed workers automatically (the old railway.json ALWAYS policy maps to
+# default behavior here). Note: workers require the paid starter plan.
+services:
+  - type: worker
+    name: alphaattest-keeper
+    runtime: docker
+    repo: https://github.com/dmustapha/alpha-attest
+    branch: main
+    rootDir: keeper
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PINATA_JWT
+        sync: false
+      - key: KEEPER_PRIVATE_KEY
+        sync: false
+      - key: ALCHEMY_API_KEY
+        sync: false
+      - key: SIGNAL_REGISTRY_ADDRESS
+        value: "0x23CD0368f1471de25E4F90f1bb2217E4Fc17bC56"
