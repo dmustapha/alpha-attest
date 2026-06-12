@@ -44,10 +44,19 @@ orchestrator.start().catch((err) => {
 });
 
 // Health endpoint. The keeper runs as a free Render web service, which spins
-// down after 15 minutes without inbound traffic — a scheduled GitHub Actions
-// ping against /healthz keeps the Finnhub stream connected around the clock.
+// down after 15 minutes without inbound traffic, so it keeps itself awake by
+// pinging its own public URL — requests through the edge count as traffic.
 const port = Number(process.env.PORT ?? 8080);
 createServer((_req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ ok: true, uptimeSeconds: Math.floor(process.uptime()) }));
 }).listen(port, () => console.log(`[Health] listening on :${port}`));
+
+const externalUrl = process.env.RENDER_EXTERNAL_URL;
+if (externalUrl) {
+  setInterval(() => {
+    fetch(`${externalUrl}/healthz`, { signal: AbortSignal.timeout(10_000) })
+      .catch((err) => console.warn("[Health] self-ping failed:", String(err).slice(0, 80)));
+  }, 5 * 60_000);
+  console.log(`[Health] self-ping armed against ${externalUrl} every 5 min`);
+}
