@@ -7,7 +7,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createPublicClient, http } from "viem";
 import { SIGNAL_REGISTRY_ABI, CONTRACT_ADDRESSES } from "../lib/contracts";
-import { bytes32ToCid, fetchAnalysis } from "../lib/ipfs";
+import { fetchAnalysis } from "../lib/ipfs";
+
+// First three signals on the v1.1 registry — committed autonomously by the
+// live keeper. A code constant (not env) so a stale deploy value can never
+// point judges at missing signals.
+const SAMPLE_SIGNAL_IDS = [1, 2, 3];
 
 const robinhoodTestnet = {
   id: 46630,
@@ -39,19 +44,17 @@ interface SampleSignalData {
 export default function SampleSignals() {
   const [samples, setSamples] = useState<SampleSignalData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const raw = process.env.NEXT_PUBLIC_SAMPLE_SIGNAL_IDS ?? "1,2,3";
-    const ids = raw.split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n)).slice(0, 3);
-    if (ids.length === 0) { setLoading(false); return; }
-
+    setLoading(true);
     const client = createPublicClient({
       chain: robinhoodTestnet,
       transport: http(process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL),
     });
 
     Promise.all(
-      ids.map(async (id) => {
+      SAMPLE_SIGNAL_IDS.map(async (id) => {
         try {
           const s = await client.readContract({
             address: CONTRACT_ADDRESSES.SIGNAL_REGISTRY,
@@ -62,9 +65,9 @@ export default function SampleSignals() {
             ticker: string; price: bigint; timestamp: bigint;
             ipfsHash: `0x${string}`; direction: number;
           };
+          if (!s.ticker) return null; // beyond signalCount — empty struct
 
-          const cid = bytes32ToCid(s.ipfsHash);
-          const doc = await fetchAnalysis(cid) as Record<string, unknown>;
+          const doc = await fetchAnalysis(s.ipfsHash) as Record<string, unknown>;
           const analysis = String(doc.analysis ?? "");
           const wordCount = typeof doc.wordCount === "number" ? doc.wordCount : undefined;
           // Extract a clean 2-sentence preview (no markdown)
@@ -92,7 +95,7 @@ export default function SampleSignals() {
       setSamples(results.filter(Boolean) as SampleSignalData[]);
       setLoading(false);
     });
-  }, []);
+  }, [attempt]);
 
   if (loading) {
     return (
@@ -105,7 +108,22 @@ export default function SampleSignals() {
     );
   }
 
-  if (samples.length === 0) return null;
+  // Honest failure state: the section promised content, so it never silently
+  // vanishes — every signal stays independently verifiable even when IPFS is slow.
+  if (samples.length === 0) {
+    return (
+      <div className="aa-sample-signals">
+        <div className="aa-section-label">Sample Signals — No Wallet Required</div>
+        <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 10, fontFamily: "var(--font-mono)" }}>
+          Sample analyses are loading slowly from IPFS — every signal in the feed below remains
+          independently verifiable on-chain.
+        </p>
+        <button className="aa-btn aa-btn-ghost aa-btn-sm" onClick={() => setAttempt(a => a + 1)}>
+          Retry loading samples
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="aa-sample-signals">

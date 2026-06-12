@@ -19,10 +19,10 @@ interface SignalAnalysisDoc {
 }
 
 interface Props {
-  cid: string;
+  ipfsHash: `0x${string}`;
 }
 
-export default function AnalysisViewer({ cid }: Props) {
+export default function AnalysisViewer({ ipfsHash }: Props) {
   const [doc, setDoc] = useState<SignalAnalysisDoc | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function AnalysisViewer({ cid }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAnalysis(cid) as SignalAnalysisDoc;
+      const result = await fetchAnalysis(ipfsHash) as SignalAnalysisDoc;
       setDoc(result);
       setExpanded(true);
     } catch {

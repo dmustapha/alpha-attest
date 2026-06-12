@@ -1,7 +1,11 @@
+// v1.1 deployment, Robinhood Chain testnet (46630), 2026-06-11.
+// Addresses are public chain constants compiled into the client bundle —
+// keeping them in code (not env) removes a whole class of deploy-time
+// breakage (stale values, trailing-newline corruption from `echo | vercel env add`).
 export const CONTRACT_ADDRESSES = {
-  SIGNAL_REGISTRY: (process.env.NEXT_PUBLIC_SIGNAL_REGISTRY_ADDRESS ?? "0x0") as `0x${string}`,
-  SUBSCRIPTION_MANAGER: (process.env.NEXT_PUBLIC_SUBSCRIPTION_MANAGER_ADDRESS ?? "0x0") as `0x${string}`,
-  MOCK_CONSUMER: (process.env.NEXT_PUBLIC_MOCK_CONSUMER_ADDRESS ?? "0x0") as `0x${string}`,
+  SIGNAL_REGISTRY: "0x23CD0368f1471de25E4F90f1bb2217E4Fc17bC56" as `0x${string}`,
+  SUBSCRIPTION_MANAGER: "0xf24d7B0481BCFEE1d8D9D7bF27368619A597eefF" as `0x${string}`,
+  MOCK_CONSUMER: "0x4C92099fc1b242C7B21e66af78d60fa09db3f17c" as `0x${string}`,
   USDG: "0x7E955252E15c84f5768B83c41a71F9eba181802F" as `0x${string}`,
 } as const;
 

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Nav from "../../components/Nav";
+import { CONTRACT_ADDRESSES } from "../../lib/contracts";
 
 const PROOF_DATA = {
-  signalRegistry: process.env.NEXT_PUBLIC_SIGNAL_REGISTRY_ADDRESS ?? "DEPLOY_AND_RECORD",
-  subscriptionManager: process.env.NEXT_PUBLIC_SUBSCRIPTION_MANAGER_ADDRESS ?? "DEPLOY_AND_RECORD",
-  mockConsumer: process.env.NEXT_PUBLIC_MOCK_CONSUMER_ADDRESS ?? "DEPLOY_AND_RECORD",
-  usdg: "0x7E955252E15c84f5768B83c41a71F9eba181802F",
+  signalRegistry: CONTRACT_ADDRESSES.SIGNAL_REGISTRY,
+  subscriptionManager: CONTRACT_ADDRESSES.SUBSCRIPTION_MANAGER,
+  mockConsumer: CONTRACT_ADDRESSES.MOCK_CONSUMER,
+  usdg: CONTRACT_ADDRESSES.USDG,
 };
 
 const EXPLORER_BASE = "https://explorer.testnet.chain.robinhood.com/address";
@@ -94,7 +95,7 @@ export default function ProofPage() {
                   <td className="mono">{row.addr.slice(0, 10)}…{row.addr.slice(-8)}</td>
                   <td style={{ color: "var(--text-3)", fontSize: 12 }}>{row.role}</td>
                   <td>
-                    {row.addr.startsWith("0x") && row.addr !== "DEPLOY_AND_RECORD" ? (
+                    {row.addr.startsWith("0x") ? (
                       <a
                         href={`${EXPLORER_BASE}/${row.addr}`}
                         target="_blank"

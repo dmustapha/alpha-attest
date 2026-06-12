@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
+import { CONTRACT_ADDRESSES } from "../../../lib/contracts";
 
 // In-memory SSE subscriber set (fine for single-instance — use Redis pub/sub for multi-instance)
 const subscribers = new Set<ReadableStreamDefaultController>();
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   const payload = JSON.parse(body);
   const isSignalEvent = payload?.event?.activity?.some(
     (a: { toAddress: string }) =>
-      a.toAddress?.toLowerCase() === process.env.NEXT_PUBLIC_SIGNAL_REGISTRY_ADDRESS?.toLowerCase()
+      a.toAddress?.toLowerCase() === CONTRACT_ADDRESSES.SIGNAL_REGISTRY.toLowerCase()
   );
 
   if (isSignalEvent) {

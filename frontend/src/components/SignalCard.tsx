@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { OnChainSignal } from "../hooks/useSignals";
-import { bytes32ToCid, getIPFSUrl, fetchAnalysis } from "../lib/ipfs";
+import { bytes32ToCidV1, getIPFSUrl, fetchAnalysis } from "../lib/ipfs";
 
 interface Props {
   signal: OnChainSignal;
@@ -20,7 +20,7 @@ const STATUS_LABEL = { 0: "PENDING", 1: "CORRECT", 2: "INCORRECT" } as const;
 
 export default function SignalCard({ signal, isSubscriber }: Props) {
   const [analysisPreview, setAnalysisPreview] = useState<string | null>(null);
-  const cid = bytes32ToCid(signal.ipfsHash);
+  const cid = bytes32ToCidV1(signal.ipfsHash);
   const price = `$${(Number(signal.price) / 1e8).toFixed(2)}`;
   const time = new Date(Number(signal.timestamp) * 1000).toLocaleString("en-US", {
     month: "short", day: "numeric",
@@ -32,13 +32,13 @@ export default function SignalCard({ signal, isSubscriber }: Props) {
 
   useEffect(() => {
     if (!isSubscriber) return;
-    fetchAnalysis(cid)
+    fetchAnalysis(signal.ipfsHash)
       .then(doc => {
         const text = String((doc as Record<string, unknown>).analysis ?? "");
         setAnalysisPreview(text.slice(0, 160).trim() || "");
       })
       .catch(() => setAnalysisPreview(""));
-  }, [cid, isSubscriber]);
+  }, [signal.ipfsHash, isSubscriber]);
 
   return (
     <div className="aa-signal" data-direction={dirLabel}>
@@ -57,7 +57,7 @@ export default function SignalCard({ signal, isSubscriber }: Props) {
       <div
         className="aa-signal-status"
         data-status={STATUS_LABEL[statusNum]}
-        title={statusNum === 0 ? "Awaiting price confirmation (24h window)" : undefined}
+        title={statusNum === 0 ? "Outcome confirmed against market price ~12 minutes after publication (50 blocks)" : undefined}
       >
         {STATUS_LABEL[statusNum]}
         {statusNum === 0 && (
@@ -105,9 +105,21 @@ export default function SignalCard({ signal, isSubscriber }: Props) {
         ) : (
           <span className="aa-signal-analysis-gate">
             This signal includes a full breakdown: what moved, why, and the reasoning behind the call.{" "}
-            <span style={{ color: "var(--brand)", cursor: "pointer" }}>
+            <button
+              style={{
+                color: "var(--brand)",
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+                padding: 0,
+                font: "inherit",
+              }}
+              onClick={() =>
+                document.querySelector(".aa-subscribe-callout")?.scrollIntoView({ behavior: "smooth", block: "center" })
+              }
+            >
               Subscribe to read it →
-            </span>
+            </button>
           </span>
         )}
       </div>

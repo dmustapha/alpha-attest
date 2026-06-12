@@ -179,6 +179,13 @@ export default function Dashboard() {
               <span style={{ fontSize: 11, color: "var(--text-4)", fontFamily: "var(--font-mono)" }}>
                 Need a wallet? MetaMask is free and takes 2 minutes to set up.
               </span>
+              <span style={{ fontSize: 11, color: "var(--text-4)", fontFamily: "var(--font-mono)" }}>
+                Subscribing needs testnet USDG — get test funds at the{" "}
+                <a href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer" style={{ color: "var(--brand)" }}>
+                  Robinhood Chain faucet
+                </a>
+                , or browse and verify every signal without subscribing.
+              </span>
             </div>
           </div>
         )}
@@ -196,7 +203,18 @@ export default function Dashboard() {
                   : "Read the complete 400+ word analysis behind every signal — what moved, the macro context, and the full reasoning. $10/month in USDG (≈ $1 each)."}
               </div>
             </div>
-            <SubscribeButton />
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <SubscribeButton />
+              {!isSubscriber && (
+                <span style={{ fontSize: 11, color: "var(--text-4)", fontFamily: "var(--font-mono)" }}>
+                  Needs testnet USDG —{" "}
+                  <a href="https://faucet.testnet.chain.robinhood.com/" target="_blank" rel="noreferrer" style={{ color: "var(--brand)" }}>
+                    Robinhood Chain faucet
+                  </a>
+                  . Browsing and verifying signals is free.
+                </span>
+              )}
+            </div>
           </div>
         )}
 
